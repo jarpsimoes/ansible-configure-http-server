@@ -1,0 +1,16 @@
+- name: Create dns record
+  hosts: dns
+  become: true
+  vars_files: config.yaml
+  tasks:
+    - name: Remove host
+      lineinfile:
+        dest: /var/named/db.home.domain
+        regexp: '^{{ item.host }} IN A {{ item.ip }}'
+        state: absent
+      loop: "{{ dns }}"
+  handlers:
+    - name: Restart DNS service
+      service:
+        name: named
+        state: restarted

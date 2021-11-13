@@ -1,0 +1,45 @@
+---
+- name: Create dns record
+  hosts: dns
+  become: true
+  vars_files: ../config.yaml
+  tasks:
+    - name: Create new hostname record
+      lineinfile:
+        path: /var/named/db.home.domain
+        line: "{{ item.host }} IN A {{ item.ip }}"
+        state: present
+      loop: "{{ dns }}"
+  handlers:
+    - name: Restart DNS service
+      service:
+        name: named
+        state: restarted
+
+- name: Set hostname
+  hosts: labs
+  become: true
+  vars:
+    packages: 
+      - httpd
+      - firewalld
+    service: http
+  tasks:
+    - name: Install packeages
+      yum:
+        name: "{{ packages }}"
+        state: latest
+    
+    - name: Start services
+      service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop: "{{ packages }}"
+    
+    - name: Open firewall
+      firewalld:
+        service: "{{ service }}"
+        permanent: true
+        immediate: true
+        state: enabled
